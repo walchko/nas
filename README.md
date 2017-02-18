@@ -172,7 +172,9 @@ Change the config file to look like this:
 
 ## Plex.tv
 
-**stuck:** I can't add movies to plex for some reason
+**issues:**
+
+- I tried to add a movie but it wouldn't show up. **Solution:** plex is run from `/etc/init.d` by user `plex` and I put the movie in a place owned by `pi` ... permission!!! Make sure your movies are located where user `plex` has access.
 
 [instructions](https://www.element14.com/community/community/raspberry-pi/raspberrypi_projects/blog/2016/03/11/a-more-powerful-plex-media-server-using-raspberry-pi-3)
 
