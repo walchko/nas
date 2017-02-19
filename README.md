@@ -1,6 +1,6 @@
 # Raspberry Pi Network Attached Storage (NAS)
 
-Setup a simple NAS for home. There are numerous references around the web, I am just trying to document my setup. Some good references are:
+Setup a simple NAS for home. There are numerous references around the web (which I linked to for reference), I am just trying to document my setup. A good general reference is:
 
 - [alexellis.io](http://blog.alexellis.io/hardened-raspberry-pi-nas/)
 
@@ -175,6 +175,7 @@ Setting up the USB drive:
 - format it for exFat so it is read/write on both Linux and macOS and supports files >4Gib
 	- need to install drivers for it: `sudo apt install exfat-fuse`
 - copy over any movies (faster than network)
+- use a powered hub, the drive I have pulled enough power to brown out the RPi 3
 
 		pi@nas:/home/plex $ sudo mkdir /media/usb
 		pi@nas:/home/plex $ sudo chown -R plex:pi /media/usb
@@ -182,6 +183,8 @@ Setting up the USB drive:
 		pi@nas:/home/plex $ sudo mount /dev/sda2 /media/usb -o uid=pi,gid=pi
 		FUSE exfat 1.1.0
 		pi@nas:/home/plex $ sudo chmod 777 -R /media/usb/
+
+![](fstab.jpg)
 
 Notice how the exfat driver popped up when we mounted the hd. Now setup `/etc/fstab`: `UUID=58A8-E5BE /mnt/PIHDD exfat defaults,auto,user,umask=000,rw,uid=pi,gid=pi 0 0`
 
@@ -329,6 +332,8 @@ This drive should spin down. To set the time use the `-S #` switch where # is mu
 - [hdparam  there looks to be an error in this ref](http://www.htpcguides.com/spin-down-and-manage-hard-drive-power-on-raspberry-pi/)
 
 ## Plex.tv
+
+![](plex.jpg)
 
 Update software:
 
