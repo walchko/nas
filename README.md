@@ -168,13 +168,53 @@ Change the config file to look like this:
 
 ## Hard Drive
 
-[hdparam](http://www.htpcguides.com/spin-down-and-manage-hard-drive-power-on-raspberry-pi/)
+Setting up the USB drive:
+
+- format it for exFat so it is read/write on both Linux and macOS and supports files >4Gib
+	- need to install drivers for it: `sudo apt install exfat-fuse`
+- copy over any movies (faster than network)
+
+Now setup `/etc/fstab`: UUID=58A8-E5BE /mnt/PIHDD exfat defaults,auto,users,umask=000,rw,uid=pi,gid=pi 0 0
+
+You can get the UUID by:
+
+	pi@nas:~ $ sudo blkid
+	/dev/mmcblk0p1: LABEL="boot" UUID="0F5F-3CD8" TYPE="vfat" PARTUUID="05a2e98f-01"
+	/dev/mmcblk0p2: UUID="0aed834e-8c8f-412d-a276-a265dc676112" TYPE="ext4" PARTUUID="05a2e98f-02"
+	/dev/mmcblk0: PTUUID="05a2e98f" PTTYPE="dos"
+	/dev/sdb1: LABEL="EFI" UUID="3F3C-1AF6" TYPE="vfat" PARTLABEL="EFI System Partition" PARTUUID="0d08e539-26cd-409a-a671-60be8792e7e6"
+	/dev/sdb2: LABEL="Nixon" UUID="58A8-E5BE" TYPE="exfat" PARTLABEL="Untitled" PARTUUID="1e6665d5-8724-4e7e-8060-ada89b769224"
+	/dev/sdb3: UUID="f10a9273-79d0-3c94-8c3a-b1f98e8bf45a" LABEL="Recovery HD" TYPE="hfsplus" PARTLABEL="Recovery HD" PARTUUID="db64ac2d-3a38-4e8d-abba-ca08d0a5fd49"
+
+- [exfat](https://miqu.me/blog/2015/01/14/tip-exfat-hdd-with-raspberry-pi/)
+- [hdparam](http://www.htpcguides.com/spin-down-and-manage-hard-drive-power-on-raspberry-pi/)
 
 ## Plex.tv
+
+Update software:
+
+	sudo apt update
+	sudo apt upgrade
+	sudo apt install apt-transport-https
+
+Setup new repo that has `plexserver`:
+
+	wget -O - https://dev2day.de/pms/dev2day-pms.gpg.key  | sudo apt-key add -  
+	echo "deb https://dev2day.de/pms/ jessie main" | sudo tee /etc/apt/sources.list.d/pms.list
+	
+Now get the software:
+
+	sudo apt update
+	sudo apt-get install -t jessie plexmediaserver
+	sudo reboot
+
+Make sure it works, by launching a browser and connecting to: `raspberrypi.local:32400/web`. If you renamed your server, then change raspberrypi.local with <pi_name>.local.
 
 **issues:**
 
 - I tried to add a movie but it wouldn't show up. **Solution:** plex is run from `/etc/init.d` by user `plex` and I put the movie in a place owned by `pi` ... permission!!! Make sure your movies are located where user `plex` has access.
+
+
 
 [instructions](https://www.element14.com/community/community/raspberry-pi/raspberrypi_projects/blog/2016/03/11/a-more-powerful-plex-media-server-using-raspberry-pi-3)
 
