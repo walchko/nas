@@ -4,6 +4,10 @@ Setup a simple NAS for home. There are numerous references around the web (which
 
 - [alexellis.io](http://blog.alexellis.io/hardened-raspberry-pi-nas/)
 
+**Still Work in Progress**
+
+- Need to add an external hard drive, I have done this before, but last time the drive died on me because (I think) it *never* spun down. So I want to select a drive that can be modified with something like `hdparam`
+
 ## Rasbian
 
 I am using Raspbian Jessie Lite (2017-01-11) as the base. Once setup, do (this took a while for me):
