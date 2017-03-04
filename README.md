@@ -335,6 +335,160 @@ This drive should spin down. To set the time use the `-S #` switch where # is mu
 - [hdparm](https://wiki.archlinux.org/index.php/hdparm)
 - [hdparam  there looks to be an error in this ref](http://www.htpcguides.com/spin-down-and-manage-hard-drive-power-on-raspberry-pi/)
 
+### SMART
+
+Install the SMART controls:
+
+	sudo apt install smartmontools
+
+Now let's check the info:
+
+```bash
+pi@nas:~ $ sudo smartctl -a /dev/sda
+smartctl 6.4 2014-10-07 r4002 [armv7l-linux-4.4.49-v7+] (local build)
+Copyright (C) 2002-14, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Device Model:     WDC WD2500BMVS-11F9S0
+Serial Number:    WD-WXE808D77224
+LU WWN Device Id: 5 0014ee 2acac3640
+Firmware Version: 01.01A11
+User Capacity:    250,059,350,016 bytes [250 GB]
+Sector Size:      512 bytes logical/physical
+Rotation Rate:    5400 rpm
+Device is:        Not in smartctl database [for details use: -P showall]
+ATA Version is:   ATA8-ACS (minor revision not indicated)
+SATA Version is:  SATA 2.5, 1.5 Gb/s
+Local Time is:    Sat Mar  4 10:49:40 2017 MST
+SMART support is: Available - device has SMART capability.
+SMART support is: Enabled
+
+=== START OF READ SMART DATA SECTION ===
+SMART Status command failed: scsi error medium or hardware error (serious)
+SMART overall-health self-assessment test result: PASSED
+Warning: This result is based on an Attribute check.
+
+General SMART Values:
+Offline data collection status:  (0x00)	Offline data collection activity
+					was never started.
+					Auto Offline Data Collection: Disabled.
+Self-test execution status:      (   0)	The previous self-test routine completed
+					without error or no self-test has ever 
+					been run.
+Total time to complete Offline 
+data collection: 		( 9180) seconds.
+Offline data collection
+capabilities: 			 (0x7b) SMART execute Offline immediate.
+					Auto Offline data collection on/off support.
+					Suspend Offline collection upon new
+					command.
+					Offline surface scan supported.
+					Self-test supported.
+					Conveyance Self-test supported.
+					Selective Self-test supported.
+SMART capabilities:            (0x0003)	Saves SMART data before entering
+					power-saving mode.
+					Supports SMART auto save timer.
+Error logging capability:        (0x01)	Error logging supported.
+					General Purpose Logging supported.
+Short self-test routine 
+recommended polling time: 	 (   2) minutes.
+Extended self-test routine
+recommended polling time: 	 ( 109) minutes.
+Conveyance self-test routine
+recommended polling time: 	 (   5) minutes.
+SCT capabilities: 	       (0x303f)	SCT Status supported.
+					SCT Error Recovery Control supported.
+					SCT Feature Control supported.
+					SCT Data Table supported.
+
+SMART Attributes Data Structure revision number: 16
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x002f   200   200   051    Pre-fail  Always       -       0
+  3 Spin_Up_Time            0x0027   151   144   021    Pre-fail  Always       -       3433
+  4 Start_Stop_Count        0x0032   100   100   000    Old_age   Always       -       806
+  5 Reallocated_Sector_Ct   0x0033   200   200   140    Pre-fail  Always       -       0
+  7 Seek_Error_Rate         0x002e   200   200   051    Old_age   Always       -       0
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       457
+ 10 Spin_Retry_Count        0x0033   100   096   051    Pre-fail  Always       -       0
+ 11 Calibration_Retry_Count 0x0032   100   100   000    Old_age   Always       -       0
+ 12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       239
+192 Power-Off_Retract_Count 0x0032   200   200   000    Old_age   Always       -       100
+193 Load_Cycle_Count        0x0032   198   198   000    Old_age   Always       -       8830
+194 Temperature_Celsius     0x0022   118   099   000    Old_age   Always       -       29
+196 Reallocated_Event_Count 0x0032   200   200   000    Old_age   Always       -       0
+197 Current_Pending_Sector  0x0032   200   200   000    Old_age   Always       -       0
+198 Offline_Uncorrectable   0x0030   100   253   000    Old_age   Offline      -       0
+199 UDMA_CRC_Error_Count    0x0032   200   200   000    Old_age   Always       -       0
+200 Multi_Zone_Error_Rate   0x0009   100   253   051    Pre-fail  Offline      -       0
+
+SMART Error Log Version: 1
+No Errors Logged
+
+SMART Self-test log structure revision number 1
+No self-tests have been logged.  [To run self-tests, use: smartctl -t]
+
+SMART Selective self-test log data structure revision number 1
+ SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
+    1        0        0  Not_testing
+    2        0        0  Not_testing
+    3        0        0  Not_testing
+    4        0        0  Not_testing
+    5        0        0  Not_testing
+Selective self-test flags (0x0):
+  After scanning selected spans, do NOT read-scan remainder of disk.
+If Selective self-test is pending on power-up, resume after 0 minute delay.
+```
+
+Now, if your HD is parking the head too much, it will show up in the LCC line:
+
+	193 Load_Cycle_Count        0x0032   198   198   000    Old_age   Always       -       8830
+
+This says the drive has parked the head 8,830 times in its life. Given this is
+an old HD, that doesn't sound too bad.There seems to be no real consensis of what
+an excessive amount is for LCC, but on average, something around 500k is the max 
+for an average drive. Once you go over that your drive *could* fail. However, there
+are reports of people with drives over 2M, so again, it depends.
+
+```bash
+1 Raw_Read_Error_Rate = This is an indicator of the current rate of errors of the low level physical sector read operations. In normal operation, there are ALWAYS a small number of errors when attempting to read sectors, but as long as the number remains small, there is NO issue with the drive. Error correction information and retry mechanisms are in place to catch and fix these errors. Manufacturers therefore determine an optimal level of errors for each drive model, and set up an appropriate scale for monitoring the current error rate. For example, if 3 errors per 1000 read operations seems near perfect to the manufacturer, then an error rate of 3 per 1000 ops might be set to an attribute VALUE of 100. Please completely ignore the RAW_VALUE, as it is not meaningful as a decimal number.
+
+3 Spin-Up Time = Average time of spindle spin up from zero RPM to fully operational [milliseconds]. 
+
+4 Start/Stop Count = A tally of spindle start/stop cycles. The spindle turns on, and hence the count is increased, both when the hard disk is turned on after having before been turned entirely off (disconnected from power source) and when the hard disk returns from having previously been put to sleep mode.
+
+5 Reallocated Sectors Count = When the hard drive finds a read/write/verification error, it marks that sector as "reallocated" and transfers data to a special reserved area (spare area). This process is also known as remapping, and reallocated sectors are called "remaps". The raw value normally represents a count of the bad sectors that have been found and remapped. Thus, the higher the attribute value, the more sectors the drive has had to reallocate. This allows a drive with bad sectors to continue operation; however, a drive which has had any reallocations at all is significantly more likely to fail in the near future.While primarily used as a metric of the life expectancy of the drive, this number also affects performance. As the count of reallocated sectors increases, the read/write speed tends to become worse because the drive head is forced to seek to the reserved area whenever a remap is accessed.
+
+7  Seek Error Rate = Rate of seek errors of the magnetic heads. If there is a partial failure in the mechanical positioning system, then seek errors will arise. Such a failure may be due to numerous factors, such as damage to a servo, or thermal widening of the hard disk. The raw value has different structure for different vendors and is often not meaningful as a decimal number.
+
+9 Power-On Hours = Count of hours in power-on state. The raw value of this attribute shows total count of hours (or minutes, or seconds, depending on manufacturer) in power-on state.
+
+10  Spin Retry Count = Count of retry of spin start attempts. This attribute stores a total count of the spin start attempts to reach the fully operational speed (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem.
+
+11 Calibration_Retry_Count = This attribute indicates the count that recalibration was requested (under the condition that the first attempt was unsuccessful). An increase of this attribute value is a sign of problems in the hard disk mechanical subsystem.
+
+12 Power Cycle Count = This attribute indicates the count of full hard disk power on/off cycles.
+
+192  Power-off Retract Count = Count of times the heads are loaded off the media. Heads can be unloaded without actually powering off.
+
+193  Load_Cycle_Count = Count of load/unload cycles into head landing zone position.Western Digital rates their VelociRaptor drives for 600,000 load/unload cycles,and WD Green drives for 300,000 cycles; 1the latter ones are designed to unload heads often to conserve power. Some laptop drives and "green power" desktop drives are programmed to unload the heads whenever there has not been any activity for a very short period of time, such as about five seconds. Many Linux installations write to the file system a few times a minute in the background. As a result, there may be 100 or more load cycles per hour, and the load cycle rating may be exceeded in less than a year.
+
+194 Temperature_Celsius = Current internal temperature.
+
+196  Reallocation_Event_Count = Count of remap operations. The raw value of this attribute shows the total count of attempts to transfer data from reallocated sectors to a spare area. Both successful & unsuccessful attempts are counted.
+
+197 Current_Pending_Sector = Count of "unstable" sectors (waiting to be remapped, because of unrecoverable read errors). If an unstable sector is subsequently read successfully, the sector is remapped and this value is decreased. Read errors on a sector will not remap the sector immediately (since the correct value cannot be read and so the value to remap is not known, and also it might become readable later); instead, the drive firmware remembers that the sector needs to be remapped, and will remap it the next time it's written.[33] However some drives will not immediately remap such sectors when written; instead the drive will first attempt to write to the problem sector and if the write operation is successful then the sector will be marked good (in this case, the "Reallocation Event Count" (0xC4) will not be increased). This is a serious shortcoming, for if such a drive contains marginal sectors that consistently fail only after some time has passed following a successful write operation, then the drive will never remap these problem sectors.
+
+198 Offline_Uncorrectable =  The total count of uncorrectable errors when reading/writing a sector. A rise in the value of this attribute indicates defects of the disk surface and/or problems in the mechanical subsystem.
+
+199 UltraDMA_CRC_Error = The count of errors in data transfer via the interface cable as determined by ICRC (Interface Cyclic Redundancy Check).
+
+200 Multi-Zone_Error_Rate = The count of errors found when writing a sector. The higher the value, the worse the disk's mechanical condition is.
+
+```
+[Ref](https://en.wikipedia.org/wiki/S.M.A.R.T.)
+
 ## Plex.tv
 
 ![](plex.jpg)
