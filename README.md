@@ -92,6 +92,15 @@ Since this is a server, I don't want the IP address to change. I also use a wire
 	  netmask 255.255.255.0
 	  gateway 192.168.1.1
 
+## Pip
+
+Install `pip` by:
+
+    wget https://bootstrap.pypa.io/get-pip.py
+    python get-pip.py
+
+[Ref](https://pip.pypa.io/en/stable/installing/)
+
 ## Node.js
 
 Node is historically old on debian servers, so let's get updates from the source.
