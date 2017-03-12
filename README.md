@@ -185,28 +185,42 @@ Change the config file to look like this:
 
 Setting up the USB drive:
 
+- I am going to use ext4, but I also include info for exFat if you want. ext4 supports nice
+things like journaling and is a better filing system than exFat, but *almost* every operating 
+system supports exFat so you can easily plut the HD into another system and read the info
 - format it for exFat so it is read/write on both Linux and macOS and supports files >4Gib
 	- need to install drivers for it: `sudo apt install exfat-fuse`
 - copy over any movies (faster than network)
-- use a powered hub, the drive I have pulled enough power to brown out the RPi 3
+- use a powered hub, the drive I have pulled enough power to brown out the RPi 3, the example
+below uses exFat
 
-		pi@nas:/home/plex $ sudo mkdir /media/usb
-		pi@nas:/home/plex $ sudo chown -R plex:pi /media/usb
-		pi@nas:/home/plex $ sudo chown -R pi:pi /media/usb
-		pi@nas:/home/plex $ sudo mount /dev/sda2 /media/usb -o uid=pi,gid=pi
+		pi@nas:/home/plex $ sudo mkdir /mnt/usbdrive
+		pi@nas:/home/plex $ sudo chown -R pi:pi /mnt/usbdrive
+		pi@nas:/home/plex $ sudo mount /dev/sda2 /mnt/usbdrive -o uid=pi,gid=pi
 		FUSE exfat 1.1.0
-		pi@nas:/home/plex $ sudo chmod 777 -R /media/usb/
+		pi@nas:/home/plex $ sudo chmod 777 -R /mnt/usbdrive/
 
 ![](fstab.jpg)
 
-Notice how the exfat driver popped up when we mounted the hd. Now setup `/etc/fstab`: `UUID=58A8-E5BE /mnt/PIHDD exfat defaults,auto,user,umask=000,rw,uid=pi,gid=pi 0 0`
+Notice how the exfat driver popped up when we mounted the hd. Now for exFat setup `/etc/fstab`: 
+
+- `UUID=58A8-E5BE /mnt/usbdrive exfat defaults,auto,user,umask=000,rw,uid=pi,gid=pi 0 0`
+
+where:
 
 - **auto** – The filesystem can be mounted automatically (at bootup, or when mount is passed the -a option). This is really unnecessary as this is the default action of mount -a anyway.
 - **rw** – Mount read-write.
 - **user** – Permit any user to mount the filesystem. This automatically implies noexec, nosuid,nodev unless overridden.
 - **defaults** – Use default settings. Equivalent to rw, suid, dev, exec, auto, nouser, async.
-- **umaks** - Sets the default permissions for folders and files. It is the opposite of chmod, so to do a chmod 777, you would issue `umask=000`
-- **uid/gid** - Set user and group ids
+- **umaks** - [exFat] Sets the default permissions for folders and files. It is the opposite of chmod, so to do a chmod 777, you would issue `umask=000`
+- **uid/gid** - [exFat] Set user and group ids
+
+If you are doing ext4, then use one of these in `/etc/fstab`:
+
+- `UUID=1205f6bf-5477-4f85-a701-13360c85f33e /mnt/usbdrive ext4 defaults,auto,nofail,user,rw 0 0`
+- `LABEL=Movies /mnt/usbdrive ext4 defaults,auto,nofail,user,rw 0 0`
+
+I like the UUID, seems more accurate.
 
 You can get the UUID by:
 
@@ -223,6 +237,86 @@ You can get the UUID by:
 - [mounting hd](https://miqu.me/blog/2015/01/14/tip-exfat-hdd-with-raspberry-pi/)
 - [fstab ref](http://www.omaroid.com/fstab-permission-masks-explained/)
 - [chmod command ref](https://www.maketecheasier.com/file-permissions-what-does-chmod-777-means/)
+
+### Reformat Hard Drive
+
+Most hardrives come preformatted with exFat, but if you want to do ext4, you can do:
+
+- parted: Create a new disklabel using GPT (delete the old MBR), GPT is a 
+  modern successor to MBR
+
+	``` bash
+	pi@nas:~ $ sudo parted /dev/sda mklabel gpt
+	```
+	
+- parted: Create a new partition setup for ext4 with `-a opt` flag to do it optimally
+
+	``` bash
+	pi@nas:~ $ sudo parted -a opt /dev/sda mkpart primary ext4 0% 100%        
+	Information: You may need to update /etc/fstab.
+	```
+	
+- mkfs.ext4: Create the filing system and I am going to label this one `Movies`
+
+	``` bash
+	pi@nas:~ $ sudo mkfs.ext4 -L Movies /dev/sda1
+	mke2fs 1.42.12 (29-Aug-2014)
+	/dev/sda1 contains a ext4 file system labelled 'Movies'
+		last mounted on Sun Mar 12 10:33:21 2017
+	Proceed anyway? (y,n) y
+	Creating filesystem with 488378368 4k blocks and 122101760 inodes
+	Filesystem UUID: 1205f6bf-5477-4f85-a701-13360c85f33e
+	Superblock backups stored on blocks: 
+		32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 
+		4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968, 
+		102400000, 214990848
+
+	Allocating group tables: done                            
+	Writing inode tables: done                            
+	Creating journal (32768 blocks): done
+	Writing superblocks and filesystem accounting information: done       
+	```
+	
+- Double check everything worked
+
+	``` bash
+	pi@nas:~ $ sudo lsblk --fs
+	NAME        FSTYPE LABEL  UUID                                 MOUNTPOINT
+	sda                                                            
+	└─sda1      ext4   Movies 1205f6bf-5477-4f85-a701-13360c85f33e 
+	mmcblk0                                                        
+	├─mmcblk0p1 vfat   boot   0F5F-3CD8                            /boot
+	└─mmcblk0p2 ext4          0aed834e-8c8f-412d-a276-a265dc676112 /
+	
+	pi@nas:~ $ sudo blkid
+	/dev/sda1: LABEL="Movies" UUID="1205f6bf-5477-4f85-a701-13360c85f33e" TYPE="ext4" PARTLABEL="primary" PARTUUID="6af0e5c9-af12-4dfc-87aa-c7d2f12ea8b5"
+	/dev/mmcblk0: PTUUID="05a2e98f" PTTYPE="dos"
+	/dev/mmcblk0p1: LABEL="boot" UUID="0F5F-3CD8" TYPE="vfat" PARTUUID="05a2e98f-01"
+	/dev/mmcblk0p2: UUID="0aed834e-8c8f-412d-a276-a265dc676112" TYPE="ext4" PARTUUID="05a2e98f-02"
+	
+	pi@nas:~ $ sudo parted -l
+	Model: Seagate Expansion (scsi)
+	Disk /dev/sda: 2000GB
+	Sector size (logical/physical): 512B/512B
+	Partition Table: gpt
+	Disk Flags: 
+
+	Number  Start   End     Size    File system  Name     Flags
+	 1      1049kB  2000GB  2000GB  ext4         primary
+
+
+	Model: SD 00000 (sd/mmc)
+	Disk /dev/mmcblk0: 16.0GB
+	Sector size (logical/physical): 512B/512B
+	Partition Table: msdos
+	Disk Flags: 
+
+	Number  Start   End     Size    Type     File system  Flags
+	 1      4194kB  70.3MB  66.1MB  primary  fat32        lba
+	 2      70.3MB  16.0GB  16.0GB  primary  ext4
+	```
+
+[Ref Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-partition-and-format-storage-devices-in-linux)
 
 ### HD Sleep
 
