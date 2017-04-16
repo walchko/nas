@@ -128,7 +128,7 @@ This is the preferred way to communicate between macOS and linux. First let's in
 	sudo apt-get update
 	sudo apt-get install samba samba-common-bin
 
-Setup a login for user `pi` (or whatever user you want):
+Create a login for user `pi` (or who ever user you want):
 
 	sudo smbpasswd -a pi
 
@@ -180,6 +180,13 @@ Change the config file to look like this:
 	   directory mask = 0700
 	   valid users = %S
 
+Once you have everything setup how you like, just restart:
+
+    sudo service smbd restart
+	sudo service nmbd restart
+
+On macOS from ``Finder``, you might have to do: File -> Go -> Connect to Server -> smb://raspberrypi.local. Login with
+username ``pi`` and whatever password you setup for ``smbd`` above.
 
 ## Hard Drive
 
