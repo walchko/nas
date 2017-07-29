@@ -177,10 +177,24 @@ Change the config file to look like this:
 	   create mask = 0700
 	   directory mask = 0700
 	   valid users = %S
+	   
+	[Movies]
+	   comment = Movies
+	   browseable = yes
+	   read only = no
+	   create mask = 0755
+	   path = /mnt/usbdrive
+	   public = yes
+	   force user = pi
+	   only guest = no
+
+To double check everything is ok with your config file, run:
+
+	sudo testparm -s
 
 Once you have everything setup how you like, just restart:
 
-    sudo service smbd restart
+	sudo service smbd restart
 	sudo service nmbd restart
 
 On macOS from ``Finder``, you might have to do: File -> Go -> Connect to Server -> smb://raspberrypi.local. Login with
